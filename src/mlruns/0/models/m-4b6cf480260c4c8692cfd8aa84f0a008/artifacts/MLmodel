@@ -1,0 +1,23 @@
+artifact_path: file:C:/Users/Jatinder Singh/Desktop/mlops-employee-attrition-pipeline/src/mlruns/0/models/m-4b6cf480260c4c8692cfd8aa84f0a008/artifacts
+flavors:
+  python_function:
+    env:
+      conda: conda.yaml
+      virtualenv: python_env.yaml
+    loader_module: mlflow.sklearn
+    model_path: model.pkl
+    predict_fn: predict
+    python_version: 3.13.2
+  sklearn:
+    code: null
+    pickled_model: model.pkl
+    serialization_format: cloudpickle
+    sklearn_version: 1.8.0
+    skops_trusted_types: null
+mlflow_version: 3.13.0
+model_id: m-4b6cf480260c4c8692cfd8aa84f0a008
+model_size_bytes: 2405256
+model_uuid: m-4b6cf480260c4c8692cfd8aa84f0a008
+prompts: null
+run_id: cb3389b25d954558adb2de0d0f6ab0b7
+utc_time_created: '2026-06-16 11:58:35.315871'
