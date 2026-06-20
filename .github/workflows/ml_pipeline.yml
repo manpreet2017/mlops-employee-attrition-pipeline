@@ -24,10 +24,14 @@ jobs:
       run: |
         pip install -r requirements.txt
 
+    - name: Show files
+      run: |
+        pwd
+          ls -R
+
     - name: Run tests
       run: |
-        pytest -v --disable-warnings --maxfail=1
-
+       pytest -v --disable-warnings --maxfail=1 -s
 
   train:
     needs: test
