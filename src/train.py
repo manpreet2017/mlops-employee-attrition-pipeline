@@ -15,7 +15,7 @@ mlflow.set_experiment("Employee Attrition")
 
 
 # Load config
-with open("../configs/config.yaml") as file:
+with open("configs/config.yaml") as file:
     config = yaml.safe_load(file)
 
 print("Loaded config:", config)
