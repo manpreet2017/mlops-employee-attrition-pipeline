@@ -11,5 +11,20 @@ Pytest
 GitHub Actions
 Pandas
 NumPy
+## How to Run
+
+Install dependencies:
+
+pip install -r requirements.txt
+
+Start MLflow server:
+
+mlflow server --backend-store-uri sqlite:///mlflow.db --host 127.0.0.1 --port 5000
+
+Train the model:
+
+python src/train.py
+
+The trained model and MLflow experiment logs will be generated after training.
 # mlops-employee-attrition-pipeline
 mlops-employee-attrition-pipeline
