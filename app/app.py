@@ -1,91 +1,193 @@
-from fastapi import FastAPI
-import joblib
-import os
+import streamlit as st
+import numpy as np
 import pandas as pd
-from llm.assistant import explain_prediction
-from pydantic import BaseModel
+import joblib
+
+from src.data_preprocessing import load_data, preprocess_data
 
 
-app = FastAPI()
+# -----------------------------
+# Load model
+# -----------------------------
+
+model = joblib.load("model.pkl")
 
 
-# Input schema for Swagger
-class Employee(BaseModel):
-    Age: int
-    BusinessTravel: str
-    DailyRate: int
-    Department: str
-    DistanceFromHome: int
-    Education: int
-    EducationField: str
-    EmployeeCount: int
-    EmployeeNumber: int
-    EnvironmentSatisfaction: int
-    Gender: str
-    HourlyRate: int
-    JobInvolvement: int
-    JobLevel: int
-    JobRole: str
-    JobSatisfaction: int
-    MaritalStatus: str
-    MonthlyIncome: int
-    MonthlyRate: int
-    NumCompaniesWorked: int
-    Over18: str
-    OverTime: str
-    PercentSalaryHike: int
-    PerformanceRating: int
-    RelationshipSatisfaction: int
-    StandardHours: int
-    StockOptionLevel: int
-    TotalWorkingYears: int
-    TrainingTimesLastYear: int
-    WorkLifeBalance: int
-    YearsAtCompany: int
-    YearsInCurrentRole: int
-    YearsSinceLastPromotion: int
-    YearsWithCurrManager: int
+# Load training data to get same feature columns
+df = load_data()
+
+X, y = preprocess_data(df)
 
 
-BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-MODEL_PATH = os.path.join(BASE_DIR, "model.pkl")
+# -----------------------------
+# Streamlit UI
+# -----------------------------
 
-model = joblib.load(MODEL_PATH)
+st.title("Employee Attrition AI Assistant")
 
-
-@app.get("/")
-def home():
-    return {
-        "message": "Employee Attrition AI Assistant Running"
-    }
+st.write(
+    "Predict whether an employee will leave the company"
+)
 
 
-@app.post("/predict")
-def predict(employee: Employee):
+# Inputs
 
-    data = employee.dict()
+age = st.number_input(
+    "Age",
+    min_value=18,
+    max_value=70,
+    value=30
+)
 
-    df = pd.DataFrame([data])
 
-    df = pd.get_dummies(df)
+monthly_income = st.number_input(
+    "Monthly Income",
+    min_value=0,
+    value=5000
+)
 
-    model_features = model.feature_names_in_
 
-    df = df.reindex(
-        columns=model_features,
-        fill_value=0
+years = st.number_input(
+    "Years At Company",
+    min_value=0,
+    value=5
+)
+
+
+overtime = st.selectbox(
+    "OverTime",
+    ["Yes", "No"]
+)
+
+
+job_level = st.number_input(
+    "Job Level",
+    min_value=1,
+    max_value=5,
+    value=2
+)
+
+
+total_working_years = st.number_input(
+    "Total Working Years",
+    min_value=0,
+    value=10
+)
+
+
+
+# -----------------------------
+# Prediction
+# -----------------------------
+
+if st.button("Predict"):
+
+
+    # Create empty dataframe with 47 features
+
+    input_df = pd.DataFrame(
+        np.zeros((1, X.shape[1])),
+        columns=X.columns
     )
 
-    prediction = model.predict(df)
 
-    result = str(prediction[0])
+    # Fill values
 
-    explanation = explain_prediction(
-        result,
-        data
+    input_df["Age"] = age
+
+    input_df["MonthlyIncome"] = monthly_income
+
+    input_df["YearsAtCompany"] = years
+
+    input_df["JobLevel"] = job_level
+
+    input_df["TotalWorkingYears"] = total_working_years
+
+
+    if "OverTime_Yes" in input_df.columns:
+
+        input_df["OverTime_Yes"] = (
+            1 if overtime == "Yes" else 0
+        )
+
+
+    prediction = model.predict(input_df)[0]
+
+
+    # -----------------------------
+    # Result
+    # -----------------------------
+
+    if prediction == 1:
+
+        result = "Employee is likely to leave the company"
+
+        st.error("⚠ " + result)
+
+
+    else:
+
+        result = "Employee is likely to stay with the company"
+
+        st.success("✅ " + result)
+
+
+
+    # -----------------------------
+    # AI HR Explanation
+    # -----------------------------
+
+    st.subheader(
+        "AI HR Assistant Explanation"
     )
 
-    return {
-        "attrition_prediction": result,
-        "explanation": explanation
-    }
+
+    explanation = f"""
+### Prediction
+
+{result}
+
+
+### Employee Details
+
+- Age: {age}
+- Monthly Income: ${monthly_income}
+- Years At Company: {years}
+- OverTime: {overtime}
+- Job Level: {job_level}
+- Total Working Years: {total_working_years}
+
+
+### HR Recommendation
+
+"""
+
+
+    if prediction == 1:
+
+        explanation += """
+The model detected a higher attrition risk.
+
+Recommended actions:
+
+- Review workload and overtime
+- Discuss career growth opportunities
+- Check employee satisfaction
+- Consider retention strategies
+"""
+
+
+    else:
+
+        explanation += """
+The model detected a lower attrition risk.
+
+Recommended actions:
+
+- Continue employee engagement
+- Provide career development opportunities
+- Maintain a positive work environment
+"""
+
+
+    st.info(explanation)
