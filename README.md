@@ -32,5 +32,3 @@ Run the interactive employee attrition prediction app:
 
 ```bash
 python -m streamlit run app/app.py
-# mlops-employee-attrition-pipeline
-mlops-employee-attrition-pipeline
