@@ -26,5 +26,11 @@ Train the model:
 python src/train.py
 
 The trained model and MLflow experiment logs will be generated after training.
+## Streamlit Application
+
+Run the interactive employee attrition prediction app:
+
+```bash
+python -m streamlit run app/app.py
 # mlops-employee-attrition-pipeline
 mlops-employee-attrition-pipeline
