@@ -1,193 +1,229 @@
 import streamlit as st
-import numpy as np
-import pandas as pd
 import joblib
+import pandas as pd
 
-from src.data_preprocessing import load_data, preprocess_data
+from llm_parser import parse_employee_text
+pipeline = joblib.load("pipeline.pkl")
 
-
-# -----------------------------
-# Load model
-# -----------------------------
-
-model = joblib.load("model.pkl")
-
-
-# Load training data to get same feature columns
-df = load_data()
-
-X, y = preprocess_data(df)
-
-
-# -----------------------------
-# Streamlit UI
-# -----------------------------
 
 st.title("Employee Attrition AI Assistant")
 
 st.write(
     "Predict whether an employee will leave the company"
 )
+st.subheader("AI Employee Assistant")
 
-
-# Inputs
-
-age = st.number_input(
-    "Age",
-    min_value=18,
-    max_value=70,
-    value=30
+text = st.text_area(
+    "Describe employee in natural language"
 )
 
+if st.button("Analyze Text"):
 
-monthly_income = st.number_input(
-    "Monthly Income",
-    min_value=0,
-    value=5000
+    employee = parse_employee_text(text)
+
+    df = pd.DataFrame([employee])
+
+    prediction = pipeline.predict(df)[0]
+
+    if prediction == 1:
+        st.error("⚠ Employee is likely to leave")
+
+        st.write(
+            "HR Recommendation: Review workload, career growth, and engagement."
+        )
+
+    else:
+        st.success("✅ Employee is likely to stay")
+
+        st.write(
+            "HR Recommendation: Continue engagement and development."
+        )
+
+    st.write("Parsed employee information:")
+    st.dataframe(df)
+
+
+# Required training features
+
+age = st.number_input("Age", value=30)
+business_travel = st.selectbox(
+    "BusinessTravel",
+    ["Travel_Rarely", "Travel_Frequently", "Non-Travel"]
 )
 
+daily_rate = st.number_input("DailyRate", value=800)
 
-years = st.number_input(
-    "Years At Company",
-    min_value=0,
+department = st.selectbox(
+    "Department",
+    ["Sales", "Research & Development", "Human Resources"]
+)
+
+distance = st.number_input(
+    "DistanceFromHome",
     value=5
 )
 
+education = st.number_input(
+    "Education",
+    value=3
+)
 
-overtime = st.selectbox(
+education_field = st.selectbox(
+    "EducationField",
+    [
+        "Life Sciences",
+        "Medical",
+        "Marketing",
+        "Technical Degree",
+        "Other"
+    ]
+)
+
+employee_count = 1
+
+employee_number = st.number_input(
+    "EmployeeNumber",
+    value=1000
+)
+
+environment = st.number_input(
+    "EnvironmentSatisfaction",
+    value=3
+)
+
+gender = st.selectbox(
+    "Gender",
+    ["Male", "Female"]
+)
+
+hourly_rate = st.number_input(
+    "HourlyRate",
+    value=60
+)
+
+job_involvement = st.number_input(
+    "JobInvolvement",
+    value=3
+)
+
+job_level = st.number_input(
+    "JobLevel",
+    value=2
+)
+
+job_role = st.selectbox(
+    "JobRole",
+    [
+        "Sales Executive",
+        "Research Scientist",
+        "Laboratory Technician",
+        "Manager"
+    ]
+)
+
+job_satisfaction = st.number_input(
+    "JobSatisfaction",
+    value=3
+)
+
+marital = st.selectbox(
+    "MaritalStatus",
+    ["Single", "Married", "Divorced"]
+)
+
+monthly_income = st.number_input(
+    "MonthlyIncome",
+    value=5000
+)
+
+monthly_rate = st.number_input(
+    "MonthlyRate",
+    value=20000
+)
+
+num_companies = st.number_input(
+    "NumCompaniesWorked",
+    value=2
+)
+
+over_time = st.selectbox(
     "OverTime",
     ["Yes", "No"]
 )
 
-
-job_level = st.number_input(
-    "Job Level",
-    min_value=1,
-    max_value=5,
-    value=2
-)
-
-
-total_working_years = st.number_input(
-    "Total Working Years",
-    min_value=0,
+total_years = st.number_input(
+    "TotalWorkingYears",
     value=10
 )
 
+years_company = st.number_input(
+    "YearsAtCompany",
+    value=5
+)
 
-
-# -----------------------------
-# Prediction
-# -----------------------------
 
 if st.button("Predict"):
 
 
-    # Create empty dataframe with 47 features
+    data = pd.DataFrame({
 
-    input_df = pd.DataFrame(
-        np.zeros((1, X.shape[1])),
-        columns=X.columns
-    )
+        "Age":[age],
+        "BusinessTravel":[business_travel],
+        "DailyRate":[daily_rate],
+        "Department":[department],
+        "DistanceFromHome":[distance],
+        "Education":[education],
+        "EducationField":[education_field],
+        "EmployeeCount":[employee_count],
+        "EmployeeNumber":[employee_number],
+        "EnvironmentSatisfaction":[environment],
+        "Gender":[gender],
+        "HourlyRate":[hourly_rate],
+        "JobInvolvement":[job_involvement],
+        "JobLevel":[job_level],
+        "JobRole":[job_role],
+        "JobSatisfaction":[job_satisfaction],
+        "MaritalStatus":[marital],
+        "MonthlyIncome":[monthly_income],
+        "MonthlyRate":[monthly_rate],
+        "NumCompaniesWorked":[num_companies],
+        "OverTime":[over_time],
+        "TotalWorkingYears":[total_years],
+        "YearsAtCompany":[years_company],
+        "PercentSalaryHike":[15],
+        "WorkLifeBalance":[3],
+        "StandardHours":[80],
+        "StockOptionLevel":[1],
+        "RelationshipSatisfaction":[3],
+        "YearsSinceLastPromotion":[1],
+        "TrainingTimesLastYear":[3],
+        "Over18":["Y"],
+        "PerformanceRating":[3],
+        "YearsInCurrentRole":[3],
+        "YearsWithCurrManager":[3],
+
+    })
 
 
-    # Fill values
-
-    input_df["Age"] = age
-
-    input_df["MonthlyIncome"] = monthly_income
-
-    input_df["YearsAtCompany"] = years
-
-    input_df["JobLevel"] = job_level
-
-    input_df["TotalWorkingYears"] = total_working_years
+    prediction = pipeline.predict(data)[0]
 
 
-    if "OverTime_Yes" in input_df.columns:
+    if prediction == 1:
 
-        input_df["OverTime_Yes"] = (
-            1 if overtime == "Yes" else 0
+        st.error(
+            "⚠ Employee is likely to leave"
         )
 
-
-    prediction = model.predict(input_df)[0]
-
-
-    # -----------------------------
-    # Result
-    # -----------------------------
-
-    if prediction == 1:
-
-        result = "Employee is likely to leave the company"
-
-        st.error("⚠ " + result)
-
+        st.write(
+            "HR Recommendation: Review workload, career growth, and engagement."
+        )
 
     else:
 
-        result = "Employee is likely to stay with the company"
+        st.success(
+            "✅ Employee is likely to stay"
+        )
 
-        st.success("✅ " + result)
-
-
-
-    # -----------------------------
-    # AI HR Explanation
-    # -----------------------------
-
-    st.subheader(
-        "AI HR Assistant Explanation"
-    )
-
-
-    explanation = f"""
-### Prediction
-
-{result}
-
-
-### Employee Details
-
-- Age: {age}
-- Monthly Income: ${monthly_income}
-- Years At Company: {years}
-- OverTime: {overtime}
-- Job Level: {job_level}
-- Total Working Years: {total_working_years}
-
-
-### HR Recommendation
-
-"""
-
-
-    if prediction == 1:
-
-        explanation += """
-The model detected a higher attrition risk.
-
-Recommended actions:
-
-- Review workload and overtime
-- Discuss career growth opportunities
-- Check employee satisfaction
-- Consider retention strategies
-"""
-
-
-    else:
-
-        explanation += """
-The model detected a lower attrition risk.
-
-Recommended actions:
-
-- Continue employee engagement
-- Provide career development opportunities
-- Maintain a positive work environment
-"""
-
-
-    st.info(explanation)
+        st.write(
+            "HR Recommendation: Continue engagement and development."
+        )

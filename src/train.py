@@ -7,10 +7,21 @@ import mlflow.sklearn
 from data_preprocessing import load_data, preprocess_data
 
 from sklearn.model_selection import train_test_split
+from sklearn.pipeline import Pipeline
 from sklearn.ensemble import RandomForestClassifier
-from sklearn.metrics import accuracy_score
-# MLflow setup
-mlflow.set_tracking_uri("http://127.0.0.1:5000")
+
+from sklearn.metrics import (
+    accuracy_score,
+    precision_score,
+    recall_score,
+    f1_score,
+    roc_auc_score
+)
+
+
+# Use local MLflow database
+mlflow.set_tracking_uri("sqlite:///mlflow.db")
+
 mlflow.set_experiment("Employee Attrition")
 
 
@@ -18,62 +29,121 @@ mlflow.set_experiment("Employee Attrition")
 with open("configs/config.yaml") as file:
     config = yaml.safe_load(file)
 
-print("Loaded config:", config)
 
 
 def train_model():
 
+
     # Load data
     df = load_data()
 
-    # Preprocess data
-    X, y = preprocess_data(df)
+
+    # Preprocess
+    X, y, preprocessor = preprocess_data(df)
 
 
-    # Split data
+
+    # Split
     X_train, X_test, y_train, y_test = train_test_split(
         X,
         y,
         test_size=config["test_size"],
-        random_state=config["model"]["random_state"]
+        random_state=config["model"]["random_state"],
+        stratify=y
     )
 
 
-    # Create model
+
+    # Model
     model = RandomForestClassifier(
         n_estimators=config["model"]["n_estimators"],
         random_state=config["model"]["random_state"]
     )
 
 
-    # Train model
-    model.fit(X_train, y_train)
+
+    # Full pipeline
+    pipeline = Pipeline(
+        steps=[
+            (
+                "preprocessor",
+                preprocessor
+            ),
+            (
+                "model",
+                model
+            )
+        ]
+    )
 
 
-    # Prediction
-    predictions = model.predict(X_test)
+
+    # Train
+    pipeline.fit(
+        X_train,
+        y_train
+    )
 
 
-    # Accuracy
-    acc = accuracy_score(y_test, predictions)
+
+    # Predict
+    predictions = pipeline.predict(X_test)
+
+    probabilities = pipeline.predict_proba(
+        X_test
+    )[:,1]
 
 
-    print(f"Model Accuracy: {acc}")
+
+    # Metrics
+
+    accuracy = accuracy_score(
+        y_test,
+        predictions
+    )
+
+    precision = precision_score(
+        y_test,
+        predictions
+    )
+
+    recall = recall_score(
+        y_test,
+        predictions
+    )
+
+    f1 = f1_score(
+        y_test,
+        predictions
+    )
+
+    roc_auc = roc_auc_score(
+        y_test,
+        probabilities
+    )
 
 
-    # MLflow tracking
+
+    print("Accuracy:", accuracy)
+    print("Precision:", precision)
+    print("Recall:", recall)
+    print("F1:", f1)
+    print("ROC-AUC:", roc_auc)
+
+
+
+    # MLflow
+
     with mlflow.start_run(
         run_name=f"RandomForest_{config['model']['n_estimators']}"
     ):
 
-        print("MLFLOW RUN STARTED")
 
-
-        # Parameters
         mlflow.log_param(
-            "model_type",
-            config["model"]["type"]
+            "model",
+            "RandomForest"
         )
+
 
         mlflow.log_param(
             "n_estimators",
@@ -81,27 +151,48 @@ def train_model():
         )
 
 
-        # Metrics
         mlflow.log_metric(
             "accuracy",
-            acc
+            accuracy
+        )
+
+        mlflow.log_metric(
+            "precision",
+            precision
+        )
+
+        mlflow.log_metric(
+            "recall",
+            recall
+        )
+
+        mlflow.log_metric(
+            "f1",
+            f1
+        )
+
+        mlflow.log_metric(
+            "roc_auc",
+            roc_auc
         )
 
 
-        # Save model in MLflow
         mlflow.sklearn.log_model(
-            model,
-            "model"
+            pipeline,
+            "pipeline"
         )
 
 
-    # Save local model
+
+    # Save full pipeline
     joblib.dump(
-        model,
-        "model.pkl"
+        pipeline,
+        "pipeline.pkl"
     )
 
-    print("Model saved successfully")
+
+    print("Pipeline saved successfully")
+
 
 
 if __name__ == "__main__":
