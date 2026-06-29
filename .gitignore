@@ -221,3 +221,5 @@ mlflow.db
 mlruns/
 model.pkl
 pipeline.pkl
+# DVC local remote
+dvc_remote/
