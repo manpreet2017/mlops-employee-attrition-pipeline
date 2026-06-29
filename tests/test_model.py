@@ -1,21 +1,22 @@
 import sys
 sys.path.append(".")
+
 import joblib
-import pandas as pd
-from src.data_preprocessing import load_data, preprocess_data
+from src.data_preprocessing import load_data
 
 
 def test_model_file_exists():
-    model = joblib.load("src/model.pkl")
+    model = joblib.load("pipeline.pkl")
     assert model is not None
 
 
 def test_model_can_predict():
-    model = joblib.load("src/model.pkl")
+    model = joblib.load("pipeline.pkl")
 
     df = load_data()
-    X, y = preprocess_data(df)
 
-    predictions = model.predict(X.head(5))
+    X = df.drop("Attrition", axis=1)
 
-    assert len(predictions) == 5
+    predictions = model.predict(X)
+
+    assert len(predictions) == len(X)
